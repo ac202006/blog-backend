@@ -24,6 +24,8 @@ blog-backend/
 - 🌐 **跨域支持**: 内置CORS支持
 - 📝 **文章管理**: 完整的文章CRUD操作
 - 🖼️ **PicGo图床**: 集成PicGo图床服务，轻松上传图片
+- 🔍 **图片去重**: 自动检测重复图片，避免重复上传，直接返回已有URL
+- 📊 **图片统计**: 提供图片上传统计和管理功能
 
 ## 快速开始
 
@@ -99,7 +101,7 @@ Content-Type: multipart/form-data
 **表单字段：**
 - `image`: 图片文件
 
-**响应示例：**
+**响应示例（新图片上传）：**
 ```json
 {
   "url": "https://origin.picgo.net/2025/09/25/xxx.png",
@@ -107,7 +109,26 @@ Content-Type: multipart/form-data
   "id": "03JQsr",
   "width": 848,
   "height": 848,
-  "size": 783728
+  "size": 783728,
+  "duplicate": false,
+  "message": "图片上传成功",
+  "hash": "a1b2c3d4e5f6...",
+  "upload_time": "2025-09-25 14:30:00"
+}
+```
+
+**响应示例（检测到重复图片）：**
+```json
+{
+  "url": "https://origin.picgo.net/2025/09/25/xxx.png",
+  "display_url": "https://origin.picgo.net/2025/09/25/xxx.png",
+  "id": "03JQsr",
+  "width": 848,
+  "height": 848,
+  "size": 783728,
+  "duplicate": true,
+  "message": "检测到重复图片，返回已有URL",
+  "upload_time": "2025-09-25 14:25:00"
 }
 ```
 
@@ -120,6 +141,42 @@ GET /api/articles/{id}
 - `id`: 文章ID
 
 **响应：** 返回文章对象，同时增加浏览量
+
+### 获取已上传图片列表
+```http
+GET /api/images
+```
+
+**响应：** 返回所有已上传图片的记录列表（按上传时间倒序）
+
+**响应示例：**
+```json
+[
+  {
+    "hash": "a1b2c3d4e5f6...",
+    "url": "https://origin.picgo.net/2025/09/25/xxx.png",
+    "filename": "test.png",
+    "upload_time": "2025-09-25 14:30:00",
+    "size": 783728,
+    "width": 848,
+    "height": 848
+  }
+]
+```
+
+### 获取图片统计信息
+```http
+GET /api/images/stats
+```
+
+**响应：**
+```json
+{
+  "total_images": 5,
+  "total_size": 2048000,
+  "total_size_mb": 1.95
+}
+```
 
 ### 检查服务状态
 ```http
@@ -166,8 +223,38 @@ GET /
 
 ### 数据存储
 - 文章数据存储在 `articles.json` 文件中
-- 首次运行时会自动创建该文件
+- 图片记录存储在 `images.json` 文件中  
+- 首次运行时会自动创建这些文件
 - 数据格式为JSON数组
+
+## 图片去重功能
+
+### 工作原理
+1. **哈希计算**: 上传图片时，系统会计算图片内容的MD5哈希值
+2. **重复检测**: 检查该哈希值是否已存在于图片记录中
+3. **智能响应**: 
+   - 如果是重复图片，直接返回已有的URL，避免重复上传
+   - 如果是新图片，正常上传到PicGo并保存记录
+
+### 特性优势
+- ⚡ **节省带宽**: 避免重复上传相同图片
+- 💾 **节省存储**: 减少图床存储空间占用
+- 🚀 **提升速度**: 重复图片直接返回URL，响应更快
+- 📊 **统计管理**: 记录所有图片信息，便于管理
+
+### 数据结构
+图片记录包含以下信息：
+```json
+{
+  "hash": "图片内容的MD5哈希值",
+  "url": "图片在图床的URL",
+  "filename": "原始文件名",
+  "upload_time": "首次上传时间",
+  "size": "文件大小（字节）",
+  "width": "图片宽度",
+  "height": "图片高度"
+}
+```
 
 ## 开发说明
 

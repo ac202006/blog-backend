@@ -7,9 +7,16 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PORT=8000
 
-# 系统依赖（如果未来需要可在此添加）
+# 系统依赖（图片处理需要）
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
+    libjpeg-dev \
+    libpng-dev \
+    libtiff-dev \
+    libfreetype6-dev \
+    liblcms2-dev \
+    libwebp-dev \
+    zlib1g-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # 先安装依赖，尽量利用缓存
