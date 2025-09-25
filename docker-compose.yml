@@ -15,6 +15,5 @@ services:
       - FLASK_RUN_PORT=8000
       - PYTHONUNBUFFERED=1
     volumes:
-      - ./uploads:/app/uploads
       - ./articles.json:/app/articles.json
     restart: unless-stopped

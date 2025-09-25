@@ -5,11 +5,14 @@
 ## 项目结构
 
 ```
-backend/
+blog-backend/
 ├── app.py                 # 主应用文件
 ├── requirements.txt       # Python依赖
 ├── start.sh              # 启动脚本
 ├── articles.json         # 文章数据文件（自动生成）
+├── docker-compose.yml    # Docker Compose配置
+├── Dockerfile            # Docker镜像配置
+├── .env.example          # 环境变量示例
 └── README.md             # 本文件
 ```
 
@@ -20,6 +23,7 @@ backend/
 - 🔄 **RESTful API**: 标准的REST接口设计
 - 🌐 **跨域支持**: 内置CORS支持
 - 📝 **文章管理**: 完整的文章CRUD操作
+- 🖼️ **PicGo图床**: 集成PicGo图床服务，轻松上传图片
 
 ## 快速开始
 
@@ -83,30 +87,27 @@ Content-Type: application/json
 
 **响应：** 返回创建的文章对象（状态码：201）
 
-### 上传图片到图床（PicGo）
+### 上传图片到PicGo图床
 ```http
 POST /api/upload/image
 Content-Type: multipart/form-data
-
-Headers:
-  X-API-Key: <可选，PicGo API Key，未提供则读取后端环境变量>
-Form:
-  image: <二进制文件>
-  filename: <可选，自定义文件名>
 ```
 
-成功响应示例：
+**请求头（可选）：**
+- `X-API-Key`: PicGo API Key（未设置环境变量时必需）
+
+**表单字段：**
+- `image`: 图片文件
+
+**响应示例：**
 ```json
 {
   "url": "https://origin.picgo.net/2025/09/25/xxx.png",
-  "display_url": "https://origin.picgo.net/2025/09/25/xxx.md.png",
-  "thumb_url": "https://origin.picgo.net/2025/09/25/xxx.th.png",
-  "medium_url": "https://origin.picgo.net/2025/09/25/xxx.md.png",
+  "display_url": "https://origin.picgo.net/2025/09/25/xxx.png",
   "id": "03JQsr",
   "width": 848,
   "height": 848,
-  "size": 783728,
-  "mime": "image/png"
+  "size": 783728
 }
 ```
 
@@ -270,14 +271,9 @@ MIT License
 curl -F "image=@test.png" http://localhost:8000/api/upload/image
 ```
 
-3) 携带 PicGo Key 直传（如果未在环境变量中配置）：
+3) 携带 PicGo Key（如果未在环境变量中配置）：
 ```bash
 curl -H "X-API-Key: <你的PicGoKey>" -F "image=@test.png" http://localhost:8000/api/upload/image
-```
-
-4) 自定义文件名：
-```bash
-curl -H "X-API-Key: <你的PicGoKey>" -F "image=@test.png" -F "filename=my-cover.png" http://localhost:8000/api/upload/image
 ```
 
 ## 使用 Docker 运行
@@ -308,8 +304,9 @@ docker compose logs -f
 ### 数据持久化
 
 `docker-compose.yml` 已将以下路径挂载到宿主机，容器重建后仍可保留：
-- `./uploads:/app/uploads` 用于图片等上传文件
 - `./articles.json:/app/articles.json` 用于文章数据文件
+
+**注意：** 图片文件通过PicGo上传到外部图床，不再需要本地存储。
 
 ### 生产部署建议
 
