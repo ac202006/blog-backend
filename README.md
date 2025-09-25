@@ -8,7 +8,7 @@
 backend/
 ├── app.py                 # 主应用文件
 ├── requirements.txt       # Python依赖
-├── start-backend.sh      # 启动脚本
+├── start.sh              # 启动脚本
 ├── articles.json         # 文章数据文件（自动生成）
 └── README.md             # 本文件
 ```
@@ -83,6 +83,33 @@ Content-Type: application/json
 
 **响应：** 返回创建的文章对象（状态码：201）
 
+### 上传图片到图床（PicGo）
+```http
+POST /api/upload/image
+Content-Type: multipart/form-data
+
+Headers:
+  X-API-Key: <可选，PicGo API Key，未提供则读取后端环境变量>
+Form:
+  image: <二进制文件>
+  filename: <可选，自定义文件名>
+```
+
+成功响应示例：
+```json
+{
+  "url": "https://origin.picgo.net/2025/09/25/xxx.png",
+  "display_url": "https://origin.picgo.net/2025/09/25/xxx.md.png",
+  "thumb_url": "https://origin.picgo.net/2025/09/25/xxx.th.png",
+  "medium_url": "https://origin.picgo.net/2025/09/25/xxx.md.png",
+  "id": "03JQsr",
+  "width": 848,
+  "height": 848,
+  "size": 783728,
+  "mime": "image/png"
+}
+```
+
 ### 获取单篇文章
 ```http
 GET /api/articles/{id}
@@ -133,6 +160,8 @@ GET /
 - `HOST`: 服务器地址（默认：0.0.0.0）
 - `PORT`: 服务器端口（默认：8000）
 - `DEBUG`: 调试模式（默认：True）
+- `PICGO_API_URL`: PicGo API 上传地址（默认：`https://www.picgo.net/api/1/upload`）
+- `PICGO_API_KEY`: PicGo API Key（可选；若不设置，调用时必须通过请求头 `X-API-Key` 提供）
 
 ### 数据存储
 - 文章数据存储在 `articles.json` 文件中
@@ -177,6 +206,8 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install -r requirements.txt
 COPY . .
+ENV PICGO_API_URL=https://www.picgo.net/api/1/upload
+# ENV PICGO_API_KEY=your_key_here
 EXPOSE 8000
 CMD ["python", "app.py"]
 ```
@@ -195,7 +226,7 @@ kill -9 <PID>
 ### 权限问题
 ```bash
 # 给启动脚本执行权限
-chmod +x start-backend.sh
+chmod +x start.sh
 ```
 
 ### 依赖安装失败
@@ -224,3 +255,27 @@ MIT License
 ## 联系方式
 
 如有问题或建议，请提交Issue或Pull Request。
+
+---
+
+### 快速测试 PicGo 上传
+
+1) 启动后端：
+```bash
+./start.sh
+```
+
+2) 本地测试：
+```bash
+curl -F "image=@test.png" http://localhost:8000/api/upload/image
+```
+
+3) 携带 PicGo Key 直传（如果未在环境变量中配置）：
+```bash
+curl -H "X-API-Key: <你的PicGoKey>" -F "image=@test.png" http://localhost:8000/api/upload/image
+```
+
+4) 自定义文件名：
+```bash
+curl -H "X-API-Key: <你的PicGoKey>" -F "image=@test.png" -F "filename=my-cover.png" http://localhost:8000/api/upload/image
+```
