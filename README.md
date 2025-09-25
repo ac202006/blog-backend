@@ -279,3 +279,54 @@ curl -H "X-API-Key: <你的PicGoKey>" -F "image=@test.png" http://localhost:8000
 ```bash
 curl -H "X-API-Key: <你的PicGoKey>" -F "image=@test.png" -F "filename=my-cover.png" http://localhost:8000/api/upload/image
 ```
+
+## 使用 Docker 运行
+
+本项目已提供 `Dockerfile` 与 `docker-compose.yml`，可直接容器化运行。
+
+### 直接使用 Docker
+
+```bash
+# 在项目根目录
+docker build -t blog-backend:latest .
+docker run --name blog-backend -p 8000:8000 blog-backend:latest
+# 停止并清理
+# docker rm -f blog-backend
+```
+
+### 使用 Docker Compose
+
+```bash
+docker compose up --build -d
+docker compose logs -f
+# 关闭
+# docker compose down
+```
+
+服务默认监听 0.0.0.0:8000（见 `app.py`），可以通过环境变量 `PORT` 覆盖容器内部端口（记得同步修改端口映射）。
+
+### 数据持久化
+
+`docker-compose.yml` 已将以下路径挂载到宿主机，容器重建后仍可保留：
+- `./uploads:/app/uploads` 用于图片等上传文件
+- `./articles.json:/app/articles.json` 用于文章数据文件
+
+### 生产部署建议
+
+建议使用 Gunicorn 作为 WSGI 服务器运行 Flask 应用：
+
+```dockerfile
+# 在 Dockerfile 中将 CMD 改为：
+CMD ["gunicorn", "-b", "0.0.0.0:8000", "app:app"]
+```
+
+或在运行容器时覆盖：
+
+```bash
+docker run --name blog-backend -p 8000:8000 blog-backend:latest \
+  gunicorn -b 0.0.0.0:8000 app:app
+```
+
+### 本机开发脚本
+
+`start.sh` 仍用于本机非容器化开发（创建并激活虚拟环境、安装依赖、运行 Flask）。容器内无需创建虚拟环境。
